@@ -21,10 +21,39 @@ class Application{
         
         // Set Routing
         let controller = BookController()
-        router.get("/book", use: controller.getBook )
-        router.post("/book", use: controller.postBook )
+//        router.get("/book", use: controller.getBook )
+        router.on(.GET, at: "/book", use: controller.getBook )
+//        router.post("/book", use: controller.postBook )
+        router.on(.POST, at: "/book", use: controller.postBook )
+//        router.put("/book", use: controller.putBook )
+        router.on(.PUT, at: "/book", use: controller.putBook )
+//        router.delete("/book", use: controller.deleteBook )
+        router.on(.DELETE, at: "/book", use: controller.deleteBook )
         
+        router.get("error") { request -> Response /* It is necessary to tell the compiler the return type */ in
+            let response = Response(http: HTTPResponse(status: .badRequest), using: request)
+            let myContent = Book(title: "Three kingdom", author: "Mitsuteru yokoyama")
+            try response.content.encode(myContent, as: MediaType.json)
+            return response
+        }
+        
+        router.get("/notfound") { request -> Response in
+            let response = request.response(ServerError( reason: "Not found is not found."), as: .json)
+            let myContent = Book(title: "Three kingdom", author: "Mitsuteru yokoyama")
+            try response.content.encode(myContent, as: .json)
+            response.http.status = .notFound
+            
+            return response
+        }
+        
+        router.on(.GET, at: "always", use: controller.alwaysError )
+        
+        // Set router
         services.register(router, as: Router.self)
+        
+        // Set server config
+        let serverConfiure = NIOServerConfig.default(hostname: "127.0.0.1", port: 8080)
+        services.register(serverConfiure)
         
         // Apply change service
         self.services = services
