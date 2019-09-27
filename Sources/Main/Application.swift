@@ -48,12 +48,29 @@ class Application{
         
         router.on(.GET, at: "always", use: controller.alwaysError )
         
+        // Add group by middleware
+        router.group(AlwaysErrorMiddleware()) { router in
+            router.get("auth", "error", use:{ request in
+                return GeneralInfomation("unreachable it.")
+            })
+        }
+        
+        let authMiddleware = AuthMiddleware()
+        router.grouped(authMiddleware).get("auth", use: { request -> GeneralInfomation in
+            let token = (try request.privateContainer.make(RelayInfomation.self)).infomation
+            print("\(request.description) token=\(token)")
+            return GeneralInfomation("You authenticate token is good. token is \(token)")
+        })
+        
         // Set router
         services.register(router, as: Router.self)
         
         // Set server config
         let serverConfiure = NIOServerConfig.default(hostname: "127.0.0.1", port: 8080)
         services.register(serverConfiure)
+        
+        // Set RelayInfomation
+        services.register(RelayInfomation(""))
         
         // Apply change service
         self.services = services
