@@ -6,6 +6,7 @@
 //
 
 import Vapor
+import JWT
 
 class Application{
     
@@ -32,8 +33,8 @@ class Application{
 //        router.delete("/book", use: controller.deleteBook )
         router.on(.DELETE, at: "/book", use: bookController.deleteBook )
         
-        router.get("/jwt", use: jwtController.getToken )
-        router.post("/jwt/verify", use: jwtController.verifyToken )
+        router.get("jwt", use: jwtController.getToken )
+        router.post("jwt", "verify", use: jwtController.verifyToken )
         
         router.get("error") { request -> Response /* It is necessary to tell the compiler the return type */ in
             let response = Response(http: HTTPResponse(status: .badRequest), using: request)
@@ -67,6 +68,8 @@ class Application{
             return GeneralInfomation("You authenticate token is good. token is \(token)")
         })
         
+        router.grouped(JWTVerifyMiddleware()).get("jwt", "verify", use: jwtController.relayedPayload )
+        
         // Set router
         services.register(router, as: Router.self)
         
@@ -74,8 +77,9 @@ class Application{
         let serverConfiure = NIOServerConfig.default(hostname: "127.0.0.1", port: 8080)
         services.register(serverConfiure)
         
-        // Set RelayInfomation
+        // Set Service models
         services.register(RelayInfomation(""))
+        services.register(Payload(username: "", exp: ExpirationClaim(value: Date())))
         
         // Apply change service
         self.services = services

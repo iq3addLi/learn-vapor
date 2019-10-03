@@ -10,9 +10,6 @@ import JWT
 
 struct JWTController{
     
-    let secret: LosslessDataConvertible = "secret"
-
-    
     // JWT Issue
     func getToken(_ request: Request) throws -> [ String: String ] {
         
@@ -20,12 +17,13 @@ struct JWTController{
         guard let username = request.query[ String.self, at: "username" ] else{
             throw Abort(.badRequest, reason: "The username is require in query.")
         }
+        let exp = request.query[ Int.self, at: "exp" ] ?? 60
         
         // create payload
-        let payload = Payload(username: username)
+        let payload = Payload(username: username, exp: ExpirationClaim(value: Date().addingTimeInterval(TimeInterval(exp))))
         
         // create JWT and sign
-        let data = try JWT(payload: payload).sign(using: .hs256(key: secret))
+        let data = try JWT(payload: payload).sign(using: .hs256(key: Constants.secret))
         return [ "token": String(data: data, encoding: .utf8) ?? "<encode failed>" ]
     }
     
@@ -34,8 +32,11 @@ struct JWTController{
         
         // JWT Verify (HTTP header bearer)
         if let bearer = request.http.headers.bearerAuthorization {
-            // parse JWT from token string, using HS-256 signer
-            let jwt = try JWT<Payload>(from: bearer.token, verifiedUsing: .hs256(key: self.secret))
+            let jwt = try JWT<Payload>(from: bearer.token, verifiedUsing: .hs256(key: Constants.secret))
+            return request.response( GeneralInfomation("Your username is \(jwt.payload.username)") , as: .json).encode(status: .ok, for: request)
+        }
+        if let token = request.http.headers.tokenAuthorization {
+            let jwt = try JWT<Payload>(from: token.token, verifiedUsing: .hs256(key: Constants.secret))
             return request.response( GeneralInfomation("Your username is \(jwt.payload.username)") , as: .json).encode(status: .ok, for: request)
         }
         
@@ -44,11 +45,15 @@ struct JWTController{
         return try request.content.decode(json: PayloadRequest.self, using: JSONDecoder()).map { (payloadReq) in
             
             // parse JWT from token string, using HS-256 signer
-            let jwt = try JWT<Payload>(from: payloadReq.token, verifiedUsing: .hs256(key: self.secret))
+            let jwt = try JWT<Payload>(from: payloadReq.token, verifiedUsing: .hs256(key: Constants.secret))
             return request.response( GeneralInfomation("Your username is \(jwt.payload.username)") , as: .json)
         }
     }
     
-    
-    
+    // JWT Verify (in Middleware)
+    func relayedPayload(_ request: Request) throws -> Future<Response> {
+        
+        let payload = (try request.privateContainer.make(Payload.self))
+        return request.response( GeneralInfomation("Your username is \(payload.username)") , as: .json).encode(status: .ok, for: request)
+    }
 }
