@@ -20,15 +20,20 @@ class Application{
         let router = EngineRouter.default()
         
         // Set Routing
-        let controller = BookController()
+        let bookController = BookController()
+        let jwtController = JWTController()
+        
 //        router.get("/book", use: controller.getBook )
-        router.on(.GET, at: "/book", use: controller.getBook )
+        router.on(.GET, at: "/book", use: bookController.getBook )
 //        router.post("/book", use: controller.postBook )
-        router.on(.POST, at: "/book", use: controller.postBook )
+        router.on(.POST, at: "/book", use: bookController.postBook )
 //        router.put("/book", use: controller.putBook )
-        router.on(.PUT, at: "/book", use: controller.putBook )
+        router.on(.PUT, at: "/book", use: bookController.putBook )
 //        router.delete("/book", use: controller.deleteBook )
-        router.on(.DELETE, at: "/book", use: controller.deleteBook )
+        router.on(.DELETE, at: "/book", use: bookController.deleteBook )
+        
+        router.get("/jwt", use: jwtController.getToken )
+        router.post("/jwt/verify", use: jwtController.verifyToken )
         
         router.get("error") { request -> Response /* It is necessary to tell the compiler the return type */ in
             let response = Response(http: HTTPResponse(status: .badRequest), using: request)
@@ -46,7 +51,7 @@ class Application{
             return response
         }
         
-        router.on(.GET, at: "always", use: controller.alwaysError )
+        router.on(.GET, at: "always", use: bookController.alwaysError )
         
         // Add group by middleware
         router.group(AlwaysErrorMiddleware()) { router in

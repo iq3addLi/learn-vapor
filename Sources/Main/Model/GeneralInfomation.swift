@@ -17,3 +17,10 @@ struct GeneralInfomation{
 import Vapor
 
 extension GeneralInfomation: Content{}
+
+// Requires implementation when generating Response
+extension GeneralInfomation: LosslessHTTPBodyRepresentable{
+    func convertToHTTPBody() -> HTTPBody{
+        return try! HTTPBody(data: JSONEncoder().encode(self))
+    }
+}

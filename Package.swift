@@ -10,10 +10,12 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/vapor/vapor", from: "3.3.1"),
+        .package(url: "https://github.com/vapor/jwt-kit", from: "3.0.0"),
     ],
     targets: [
         .target(name: "Main", dependencies: [
-            "Vapor"
+            "Vapor",
+            "JWT",
         ]),
         .testTarget(name: "learn-vaporTests", dependencies: ["Main"]),
     ]
