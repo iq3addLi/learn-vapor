@@ -6,6 +6,7 @@
 //
 
 
+import JWT
 
 final class Payload{
     var username: String
@@ -17,7 +18,6 @@ final class Payload{
     }
 }
 
-import JWT
 extension Payload: JWTPayload{
     
     // MEMO: signatureData verify already finished before here.

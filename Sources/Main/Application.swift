@@ -61,11 +61,18 @@ class Application{
             })
         }
         
+        
         let authMiddleware = AuthMiddleware()
         router.grouped(authMiddleware).get("auth", use: { request -> GeneralInfomation in
             let token = (try request.privateContainer.make(RelayInfomation.self)).infomation
             print("\(request.description) token=\(token)")
             return GeneralInfomation("You authenticate token is good. token is \(token)")
+        })
+        
+        // Add error handling middleware to do custom responses
+        let custumErrorMiddleware = CustumErrorMiddleware()
+        router.grouped(custumErrorMiddleware).get( ["error", "custom"], use: { request -> Response in
+            throw ServerError(reason: "This is custom error description.")
         })
         
         router.grouped(JWTVerifyMiddleware()).get("jwt", "verify", use: jwtController.relayedPayload )
